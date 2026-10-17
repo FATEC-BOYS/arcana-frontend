@@ -1,14 +1,12 @@
-# Roadmap
+# Estado
 
-- [x] Fundação Angular, rotas lazy, tokens e layout responsivo
-- [x] Formulário e mesa demonstrativa
-- [x] Integração GET /api/v1/spreads com estado de indisponibilidade
-- [x] Lockfile e instalação de dependências
-- [ ] Testes de componente e fluxo ponta a ponta
-- [ ] Autenticação e contrato de sessão com backend
-- [ ] Catálogo licenciado, tiragens persistidas e idempotência
-- [ ] Leitura real, SSE retomável e fontes
-- [ ] Conversa, diário, favoritos e privacidade
-- [ ] Revisão visual em dispositivos e acessibilidade
-
-Fora da V1: astrologia, voz, pagamentos e baralhos personalizados.
+- [x] Direção visual, home, navegação responsiva e redução de movimento
+- [x] Autenticação, recuperação, perfil e sessão renovável
+- [x] Catálogo real, tiragem, resultado, evidências e conversa
+- [x] Diário, favoritos e histórico paginado
+- [x] Astrologia natal com SVG e horário desconhecido
+- [x] Build de produção e testes de navegador em CI
+- [ ] Homologar contra backend publicado com chave de IA e SMTP
+- [ ] Geocodificação assistida (backend atual exige coordenadas/fuso)
+- [ ] Rascunhos e aviso ao sair com anotações não salvas
+- [ ] Baralho ilustrado original e revisão das artes decorativas externas

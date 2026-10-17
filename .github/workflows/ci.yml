@@ -3,13 +3,22 @@ on: [push, pull_request]
 permissions:
   contents: read
 jobs:
-  build:
+  checks:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
           node-version: '22'
+          cache: npm
       - run: npm ci
       - run: npm run typecheck
       - run: npm run build
+      - run: npx playwright install --with-deps chromium
+      - run: npm test -- --workers=2
+      - uses: actions/upload-artifact@v4
+        if: failure()
+        with:
+          name: browser-traces
+          path: test-results/
+          retention-days: 7

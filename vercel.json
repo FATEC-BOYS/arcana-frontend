@@ -1,0 +1,7 @@
+{
+  "buildCommand": "npm run build",
+  "outputDirectory": "dist/arcana/browser",
+  "rewrites": [
+    { "source": "/((?!api/|.*\\.).*)", "destination": "/index.html" }
+  ]
+}
