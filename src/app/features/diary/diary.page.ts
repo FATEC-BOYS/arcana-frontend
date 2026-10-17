@@ -18,7 +18,7 @@ import { Journal, Reading } from "../../core/api/models";
       <p class="lead">
         Um lugar reservado para aquilo que cada leitura desperta.
       </p>
-      <a class="button" routerLink="/leitura">Abrir uma nova leitura ↗</a>
+      <a class="button" routerLink="/app/leitura">Abrir uma nova leitura ↗</a>
     </div>
     <div class="ritual-tabs" role="group" aria-label="Filtrar leituras">
       <button [class.active]="!favorites()" (click)="filter(false)">
@@ -59,7 +59,7 @@ import { Journal, Reading } from "../../core/api/models";
           <p class="page-copy">
             Uma pergunta pode ser a primeira linha de uma nova história.
           </p>
-          <a class="ink-button" routerLink="/leitura"
+          <a class="ink-button" routerLink="/app/leitura"
             >Fazer minha primeira leitura ↗</a
           >
         </div>
@@ -78,7 +78,7 @@ import { Journal, Reading } from "../../core/api/models";
           <p class="page-copy excerpt">
             {{ r.result?.summary || statusLabel(r.status) }}
           </p>
-          <a class="ink-button" [routerLink]="['/mesa', r.id]"
+          <a class="ink-button" [routerLink]="['/app/mesa', r.id]"
             >Reabrir esta leitura ↗</a
           >
         </div>

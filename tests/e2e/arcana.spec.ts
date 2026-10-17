@@ -47,6 +47,10 @@ async function session(page: Page) {
   );
 }
 async function mock(page: Page) {
+  await page.route(
+    "https://hebbkx1anhila5yf.public.blob.vercel-storage.com/**",
+    (route) => route.abort(),
+  );
   let note = { reading_id: "reading-1", note: "", favorite: false };
   let hasNote = false;
   let messages: unknown[] = [];
@@ -146,7 +150,7 @@ test("protects personal pages and offers a working mobile menu", async ({
 });
 test("registers and opens the persisted diary", async ({ page }) => {
   await mock(page);
-  await page.goto("/conta");
+  await page.goto("/cadastro");
   await page.getByLabel("Como podemos chamar você?").fill("Ale");
   await page.getByLabel("Seu e-mail", { exact: true }).fill(user.email);
   await page.getByLabel("Sua senha", { exact: true }).fill("a-long-password");
@@ -169,7 +173,7 @@ test("creates a reading, reveals the actual draw, saves a note and chats", async
   );
   await page.getByRole("button", { name: "Preparar meu ritual" }).click();
   expect((await request).headers()["idempotency-key"]).toBeTruthy();
-  await expect(page).toHaveURL(/mesa\/reading-1/);
+  await expect(page).toHaveURL(/app\/mesa\/reading-1/);
   await page.getByRole("button", { name: "Revelar carta 1" }).click();
   await expect(
     page.getByRole("button", { name: "Carta revelada: O Louco" }),
@@ -278,4 +282,35 @@ test("catalogue search uses server cards and pages fit the viewport", async ({
       () => document.documentElement.scrollWidth <= window.innerWidth,
     ),
   ).toBe(true);
+});
+
+test("public navigation hides private destinations and private layout has its own routes", async ({
+  page,
+  isMobile,
+}) => {
+  await mock(page);
+  await page.goto("/");
+  if (isMobile)
+    await page.getByRole("button", { name: "Abrir navegação" }).click();
+  const nav = page.getByRole("navigation");
+  await expect(nav.getByRole("link", { name: "Meu diário" })).toHaveCount(0);
+  await expect(
+    nav.getByRole("link", { name: "Entrar", exact: true }),
+  ).toBeVisible();
+  await page.goto("/app/mapa");
+  await expect(page).toHaveURL(/entrar\?returnUrl=%2Fapp%2Fmapa/);
+  await page.getByLabel("Seu e-mail", { exact: true }).fill(user.email);
+  await page.getByLabel("Sua senha", { exact: true }).fill("a-long-password");
+  await page.getByRole("button", { name: "Entrar no meu livro" }).click();
+  await expect(page).toHaveURL("/app/mapa");
+  if (isMobile)
+    await page.getByRole("button", { name: "Abrir navegação" }).click();
+  await expect(nav.getByRole("link", { name: "Meu diário" })).toBeVisible();
+  await expect(
+    nav.getByRole("link", { name: "Entrar", exact: true }),
+  ).toHaveCount(0);
+  await page.goto("/entrar");
+  await expect(page).toHaveURL("/app/diario");
+  await page.goto("/app/conta");
+  await expect(page.getByRole("heading", { name: "Seu espaço" })).toBeVisible();
 });

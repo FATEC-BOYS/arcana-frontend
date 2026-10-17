@@ -11,7 +11,7 @@ import { Chart, ChartItem, Reading } from "../../core/api/models";
     <p class="eyebrow">O CÉU DO SEU PRIMEIRO INSTANTE</p>
     <h1>Seu mapa.<br /><em>Outros olhares.</em></h1>
     <div class="ritual-tabs">
-      <a routerLink="/leitura">✦ Tarot</a
+      <a routerLink="/app/leitura">✦ Tarot</a
       ><span class="active">☽ Mapa natal</span>
     </div>
     @if (!chart()) {
@@ -313,7 +313,7 @@ export class AstrologyPage {
         },
         this.key,
       );
-      await this.router.navigate(["/mesa", reading.id]);
+      await this.router.navigate(["/app/mesa", reading.id]);
     });
   }
   async remove() {

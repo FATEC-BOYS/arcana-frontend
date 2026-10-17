@@ -1102,3 +1102,14 @@ blockquote p {
 button.tarot-card {
   animation: none;
 }
+
+/* Navigation ornaments are visual, not part of accessible link names. */
+nav a::before {
+  content: "";
+  display: inline-block;
+  width: 3px;
+  height: 3px;
+  border-radius: 50%;
+  background: var(--gold);
+  vertical-align: middle;
+}

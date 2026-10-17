@@ -207,8 +207,8 @@ import { TarotCardComponent } from "../../shared/ui/tarot-card.component";
         </section>
       </div>
       <div class="reading-actions">
-        <a class="text-link" routerLink="/diario">← Voltar ao meu diário</a
-        ><a class="text-link" routerLink="/leitura">Nova leitura ↗</a
+        <a class="text-link" routerLink="/app/diario">← Voltar ao meu diário</a
+        ><a class="text-link" routerLink="/app/leitura">Nova leitura ↗</a
         ><button
           class="text-link danger"
           (click)="confirmDelete.set(!confirmDelete())"
@@ -378,7 +378,7 @@ export class ReadingRoomPage {
   async remove() {
     await this.action(async () => {
       await this.api.request("/readings/" + this.id, "DELETE");
-      await this.router.navigate(["/diario"]);
+      await this.router.navigate(["/app/diario"]);
     });
   }
   failure(code: string | null) {

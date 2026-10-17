@@ -71,7 +71,7 @@ import { Card } from "../../core/api/models";
     @if (!loading() && !error() && !filtered().length) {
       <p class="feedback">Nenhuma carta encontrada. Experimente outro termo.</p>
     }
-    <a class="button" routerLink="/leitura">Abrir uma tiragem ↗</a>
+    <a class="button" routerLink="/app/leitura">Abrir uma tiragem ↗</a>
   </section>`,
 })
 export class LibraryPage {

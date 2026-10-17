@@ -11,7 +11,8 @@ import { Reading } from "../../core/api/models";
     <h1>O que pede<br /><em>sua atenção?</em></h1>
     <p class="lead">Dê espaço à pergunta que trouxe você até aqui.</p>
     <div class="ritual-tabs">
-      <span class="active">✦ Tarot</span><a routerLink="/mapa">☽ Mapa natal</a>
+      <span class="active">✦ Tarot</span
+      ><a routerLink="/app/mapa">☽ Mapa natal</a>
     </div>
     <form #form="ngForm" (ngSubmit)="prepare()">
       <fieldset [disabled]="busy()">
@@ -96,7 +97,7 @@ export class ReadingSetupPage {
         },
         this.key,
       );
-      await this.router.navigate(["/mesa", reading.id]);
+      await this.router.navigate(["/app/mesa", reading.id]);
     } catch (e) {
       this.error.set(errorText(e));
     } finally {

@@ -6,3 +6,7 @@ export const authGuard: CanActivateFn = (_, state) =>
   inject(Router).createUrlTree(["/entrar"], {
     queryParams: { returnUrl: state.url },
   });
+
+export const guestGuard: CanActivateFn = () =>
+  !inject(ArcanaService).signedIn() ||
+  inject(Router).createUrlTree(["/app/diario"]);

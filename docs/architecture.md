@@ -17,3 +17,14 @@ sair e descarta respostas antigas ao trocar de leitura. Não persiste perguntas 
 O diário combina histórico paginado de leituras com anotação da leitura selecionada.
 Favoritas são paginadas pelo endpoint de diário. A mesma anotação é acessível na mesa.
 Sem sincronização de rascunhos: salvar explicitamente antes de trocar de página.
+
+## Áreas de navegação
+
+PublicLayout contém início, biblioteca, cadastro, login e recuperação de acesso.
+PrivateLayout agrupa `/app/diario`, `/app/leitura`, `/app/mapa`, `/app/mesa/:id`
+e `/app/conta`. O pai e seus filhos usam authGuard. GuestGuard encaminha sessões
+existentes de login/cadastro para o diário. Login respeita returnUrl da rota protegida.
+Os menus são próprios de cada layout; o formulário de perfil exige modo profile privado.
+URLs antigas de leitura/mapa/diário/mesa redirecionam para /app; /conta preserva a
+compatibilidade, levando visitantes a /cadastro e sessões existentes a /app/conta.
+O backend continua responsável por autenticar e autorizar cada requisição.

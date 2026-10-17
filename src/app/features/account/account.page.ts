@@ -20,7 +20,7 @@ import { Usage } from "../../core/api/models";
       </div>
       <div class="account-form">
         <p class="eyebrow">SEU LIVRO, SEU TEMPO</p>
-        @if (api.signedIn() && mode === "register") {
+        @if (api.signedIn() && mode === "profile") {
           <h1>Seu <em>espaço</em></h1>
           <p class="lead">{{ api.user()?.email }}</p>
           <form #profileForm="ngForm" (ngSubmit)="saveProfile()">
@@ -42,7 +42,7 @@ import { Usage } from "../../core/api/models";
               meia-noite UTC.
             </p>
           }
-          <a class="text-link" routerLink="/diario">Abrir meu diário →</a
+          <a class="text-link" routerLink="/app/diario">Abrir meu diário →</a
           ><button
             class="button secondary"
             (click)="logout()"
@@ -151,7 +151,7 @@ import { Usage } from "../../core/api/models";
           </form>
           <p class="account-switch">
             <a routerLink="/entrar">Entrar</a> ·
-            <a routerLink="/conta">Criar conta</a> ·
+            <a routerLink="/cadastro">Criar conta</a> ·
             <a routerLink="/recuperar-senha">Esqueci minha senha</a>
           </p>
         }
@@ -283,7 +283,7 @@ export class AccountPage {
   readonly api = inject(ArcanaService);
   private readonly route = inject(ActivatedRoute);
   private readonly router = inject(Router);
-  readonly mode: "register" | "login" | "forgot" | "reset" =
+  readonly mode: "register" | "login" | "forgot" | "reset" | "profile" =
     this.route.snapshot.data["mode"] || "register";
   readonly busy = signal(false);
   readonly error = signal("");
@@ -304,8 +304,7 @@ export class AccountPage {
           "Abra o link enviado por e-mail para redefinir sua senha.",
         );
     }
-    if (this.api.signedIn() && this.mode === "register")
-      void this.loadProfile();
+    if (this.api.signedIn() && this.mode === "profile") void this.loadProfile();
   }
   async loadProfile() {
     try {
@@ -371,7 +370,7 @@ export class AccountPage {
         await this.router.navigateByUrl(
           target?.startsWith("/") && !target.startsWith("//")
             ? target
-            : "/diario",
+            : "/app/diario",
         );
       }
     });
