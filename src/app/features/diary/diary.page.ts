@@ -22,9 +22,9 @@ import { DraftAware } from "../../core/auth/unsaved-changes.guard";
       <a class="button" routerLink="/app/leitura">Abrir uma nova leitura ↗</a>
     </div>
     <div class="ritual-tabs" role="group" aria-label="Filtrar leituras">
-      <button [class.active]="!favorites()" (click)="filter(false)">
+      <button [class.active]="!favorites()" [attr.aria-pressed]="!favorites()" (click)="filter(false)">
         Todas as leituras</button
-      ><button [class.active]="favorites()" (click)="filter(true)">
+      ><button [class.active]="favorites()" [attr.aria-pressed]="favorites()" (click)="filter(true)">
         ✦ Favoritas
       </button>
     </div>
