@@ -4,6 +4,11 @@ import { FormsModule } from "@angular/forms";
 import { Router, RouterLink } from "@angular/router";
 import { ArcanaService, errorText } from "../../core/api/arcana.service";
 import { Chart, ChartItem, Reading } from "../../core/api/models";
+function localDateISO(date = new Date()) {
+  const pad = (value: number) => String(value).padStart(2, "0");
+  return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}`;
+}
+
 @Component({
   standalone: true,
   imports: [FormsModule, RouterLink, DatePipe, KeyValuePipe, DecimalPipe],
@@ -210,11 +215,6 @@ import { Chart, ChartItem, Reading } from "../../core/api/models";
     }
   </section>`,
 })
-function localDateISO(date = new Date()) {
-  const pad = (value: number) => String(value).padStart(2, "0");
-  return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}`;
-}
-
 export class AstrologyPage {
   private readonly api = inject(ArcanaService);
   private readonly router = inject(Router);
