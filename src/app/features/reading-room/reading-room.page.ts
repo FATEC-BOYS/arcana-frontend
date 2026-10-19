@@ -191,6 +191,9 @@ import { TarotCardComponent } from "../../shared/ui/tarot-card.component";
           @if (noteLoading()) {
             <p role="status" class="muted">Carregando suas anotações…</p>
           }
+          @if (hasUnsavedChanges()) {
+            <p class="small muted" role="status">Alterações ainda não salvas.</p>
+          }
           <form (ngSubmit)="saveNote()">
             <fieldset [disabled]="noteLoading() || busy()">
             <label for="note">Suas anotações privadas</label
@@ -206,7 +209,7 @@ import { TarotCardComponent } from "../../shared/ui/tarot-card.component";
               ><input type="checkbox" name="favorite" [(ngModel)]="favorite" />
               Guardar entre minhas favoritas</label
             ><button class="button" [disabled]="busy()">
-              {{ hasUnsavedChanges() ? "Salvar alterações no diário" : "Salvar no diário" }}
+              Salvar no diário
             </button>
             </fieldset>
           </form>
