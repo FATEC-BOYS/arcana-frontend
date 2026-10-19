@@ -97,6 +97,7 @@ import { DraftAware } from "../../core/auth/unsaved-changes.guard";
                 id="diary-note"
                 name="note"
                 [(ngModel)]="note"
+                [disabled]="saving()"
                 rows="7"
                 maxlength="10000"
                 placeholder="Escreva o que esta leitura despertou…"
@@ -106,6 +107,7 @@ import { DraftAware } from "../../core/auth/unsaved-changes.guard";
                   type="checkbox"
                   name="favorite"
                   [(ngModel)]="favorite"
+                  [disabled]="saving()"
                 />
                 Marcar como favorita</label
               ><button class="ink-button" [disabled]="saving()">
@@ -405,14 +407,15 @@ export class DiaryPage implements DraftAware {
     if (this.saving() || !this.confirmDiscard()) return;
     this.favorites.set(value);
     this.offset.set(0);
-    void this.load();
+    void this.load(true);
   }
   paginate(delta: number) {
     if (this.saving() || !this.confirmDiscard()) return;
     this.offset.update((value) => Math.max(0, value + delta));
-    void this.load();
+    void this.load(true);
   }
-  async load() {
+  async load(force = false) {
+    if (this.saving() || (!force && !this.confirmDiscard())) return;
     const ticket = ++this.ticket;
     this.loading.set(true);
     this.error.set("");
@@ -477,12 +480,14 @@ export class DiaryPage implements DraftAware {
     this.saving.set(true);
     this.error.set("");
     try {
+      const submittedNote = this.note;
+      const submittedFavorite = this.favorite;
       await this.api.request("/journal/" + reading.id, "PUT", {
-        note: this.note,
-        favorite: this.favorite,
+        note: submittedNote,
+        favorite: submittedFavorite,
       });
-      this.savedNote = this.note;
-      this.savedFavorite = this.favorite;
+      this.savedNote = submittedNote;
+      this.savedFavorite = submittedFavorite;
       this.notice.set("Sua página foi guardada.");
     } catch (e) {
       this.error.set(errorText(e));
