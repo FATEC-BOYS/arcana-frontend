@@ -1,6 +1,7 @@
 import { inject } from "@angular/core";
 import { Router, Routes } from "@angular/router";
 import { authGuard, guestGuard } from "./core/auth/auth.guard";
+import { unsavedChangesGuard } from "./core/auth/unsaved-changes.guard";
 import { ArcanaService } from "./core/api/arcana.service";
 const account = () =>
   import("./features/account/account.page").then((m) => m.AccountPage);
@@ -15,6 +16,7 @@ export const routes: Routes = [
       { path: "", pathMatch: "full", redirectTo: "diario" },
       {
         path: "diario",
+        canDeactivate: [unsavedChangesGuard],
         loadComponent: () =>
           import("./features/diary/diary.page").then((m) => m.DiaryPage),
       },
@@ -34,6 +36,7 @@ export const routes: Routes = [
       },
       {
         path: "mesa/:id",
+        canDeactivate: [unsavedChangesGuard],
         loadComponent: () =>
           import("./features/reading-room/reading-room.page").then(
             (m) => m.ReadingRoomPage,
