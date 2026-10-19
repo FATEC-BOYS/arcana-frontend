@@ -1,4 +1,4 @@
-import { Component, DestroyRef, inject, signal } from "@angular/core";
+import { Component, DestroyRef, HostListener, inject, signal } from "@angular/core";
 import { DatePipe } from "@angular/common";
 import { FormsModule } from "@angular/forms";
 import { ActivatedRoute, Router, RouterLink } from "@angular/router";
@@ -9,6 +9,7 @@ import {
   errorText,
 } from "../../core/api/arcana.service";
 import { Journal, Message, Reading } from "../../core/api/models";
+import { DraftAware } from "../../core/auth/unsaved-changes.guard";
 import { TarotCardComponent } from "../../shared/ui/tarot-card.component";
 @Component({
   standalone: true,
@@ -51,7 +52,7 @@ import { TarotCardComponent } from "../../shared/ui/tarot-card.component";
             </div>
           }
         </div>
-        <p class="muted small">
+        <p class="muted small" aria-live="polite">
           {{ revealed().length }} de {{ r.facts.cards?.length }} cartas
           reveladas. Toque em cada carta.
         </p>
@@ -65,9 +66,9 @@ import { TarotCardComponent } from "../../shared/ui/tarot-card.component";
           }}
         </p>
       }
-      <div class="reading-content" aria-live="polite">
+      <div class="reading-content">
         @if (r.status === "pending" || r.status === "processing") {
-          <div class="ritual-wait">
+          <div class="ritual-wait" role="status" aria-live="polite">
             <span aria-hidden="true">✦</span>
             <h2>Seu momento está tomando forma.</h2>
             <p>
@@ -187,7 +188,14 @@ import { TarotCardComponent } from "../../shared/ui/tarot-card.component";
         <section class="journal-editor">
           <p class="eyebrow">UMA PÁGINA SUA</p>
           <h2>Escreva o que <em>permanece.</em></h2>
+          @if (noteLoading()) {
+            <p role="status" class="muted">Carregando suas anotações…</p>
+          }
+          @if (hasUnsavedChanges()) {
+            <p class="small muted" role="status">Alterações ainda não salvas.</p>
+          }
           <form (ngSubmit)="saveNote()">
+            <fieldset [disabled]="noteLoading() || busy()">
             <label for="note">Suas anotações privadas</label
             ><textarea
               id="note"
@@ -203,6 +211,7 @@ import { TarotCardComponent } from "../../shared/ui/tarot-card.component";
             ><button class="button" [disabled]="busy()">
               Salvar no diário
             </button>
+            </fieldset>
           </form>
         </section>
       </div>
@@ -235,7 +244,7 @@ import { TarotCardComponent } from "../../shared/ui/tarot-card.component";
     }
   </section>`,
 })
-export class ReadingRoomPage {
+export class ReadingRoomPage implements DraftAware {
   private readonly api = inject(ArcanaService);
   private readonly router = inject(Router);
   private readonly route = inject(ActivatedRoute);
@@ -244,6 +253,7 @@ export class ReadingRoomPage {
   readonly revealed = signal<number[]>([]);
   readonly loading = signal(true);
   readonly busy = signal(false);
+  readonly noteLoading = signal(true);
   readonly error = signal("");
   readonly actionError = signal("");
   readonly notice = signal("");
@@ -256,6 +266,8 @@ export class ReadingRoomPage {
   private generation = 0;
   private alive = true;
   private id = "";
+  private savedNote = "";
+  private savedFavorite = false;
   constructor() {
     inject(DestroyRef).onDestroy(() => {
       this.alive = false;
@@ -271,6 +283,9 @@ export class ReadingRoomPage {
       this.revealed.set([]);
       this.note = "";
       this.favorite = false;
+      this.savedNote = "";
+      this.savedFavorite = false;
+      this.noteLoading.set(true);
       this.question = "";
       this.error.set("");
       void this.load(true, this.generation);
@@ -304,12 +319,18 @@ export class ReadingRoomPage {
       if (initial) {
         try {
           const entry = await this.api.request<Journal>("/journal/" + this.id);
-          if (ticket !== this.generation) return;
+          if (!this.alive || ticket !== this.generation) return;
           this.note = entry.note;
           this.favorite = entry.favorite;
         } catch (e) {
-          if (!(e instanceof ApiError && e.status === 404))
+          if (this.alive && ticket === this.generation && !(e instanceof ApiError && e.status === 404))
             this.actionError.set(errorText(e));
+        } finally {
+          if (this.alive && ticket === this.generation) {
+            this.savedNote = this.note;
+            this.savedFavorite = this.favorite;
+            this.noteLoading.set(false);
+          }
         }
       }
       if (
@@ -372,6 +393,8 @@ export class ReadingRoomPage {
         note: this.note,
         favorite: this.favorite,
       });
+      this.savedNote = this.note;
+      this.savedFavorite = this.favorite;
       this.notice.set("Sua página foi guardada.");
     });
   }
@@ -380,6 +403,16 @@ export class ReadingRoomPage {
       await this.api.request("/readings/" + this.id, "DELETE");
       await this.router.navigate(["/app/diario"]);
     });
+  }
+  hasUnsavedChanges() {
+    return (
+      !this.noteLoading() &&
+      (this.note !== this.savedNote || this.favorite !== this.savedFavorite)
+    );
+  }
+  @HostListener("window:beforeunload", ["$event"])
+  protectDraft(event: BeforeUnloadEvent) {
+    if (this.hasUnsavedChanges()) event.preventDefault();
   }
   failure(code: string | null) {
     return code === "llm_not_configured"

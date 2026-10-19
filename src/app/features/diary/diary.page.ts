@@ -1,4 +1,4 @@
-import { Component, inject, signal } from "@angular/core";
+import { Component, HostListener, inject, signal } from "@angular/core";
 import { DatePipe } from "@angular/common";
 import { FormsModule } from "@angular/forms";
 import { RouterLink } from "@angular/router";
@@ -8,6 +8,7 @@ import {
   errorText,
 } from "../../core/api/arcana.service";
 import { Journal, Reading } from "../../core/api/models";
+import { DraftAware } from "../../core/auth/unsaved-changes.guard";
 @Component({
   standalone: true,
   imports: [RouterLink, FormsModule, DatePipe],
@@ -21,9 +22,9 @@ import { Journal, Reading } from "../../core/api/models";
       <a class="button" routerLink="/app/leitura">Abrir uma nova leitura ↗</a>
     </div>
     <div class="ritual-tabs" role="group" aria-label="Filtrar leituras">
-      <button [class.active]="!favorites()" (click)="filter(false)">
+      <button [class.active]="!favorites()" [attr.aria-pressed]="!favorites()" (click)="filter(false)">
         Todas as leituras</button
-      ><button [class.active]="favorites()" (click)="filter(true)">
+      ><button [class.active]="favorites()" [attr.aria-pressed]="favorites()" (click)="filter(true)">
         ✦ Favoritas
       </button>
     </div>
@@ -96,6 +97,7 @@ import { Journal, Reading } from "../../core/api/models";
                 id="diary-note"
                 name="note"
                 [(ngModel)]="note"
+                [disabled]="saving()"
                 rows="7"
                 maxlength="10000"
                 placeholder="Escreva o que esta leitura despertou…"
@@ -105,10 +107,11 @@ import { Journal, Reading } from "../../core/api/models";
                   type="checkbox"
                   name="favorite"
                   [(ngModel)]="favorite"
+                  [disabled]="saving()"
                 />
                 Marcar como favorita</label
               ><button class="ink-button" [disabled]="saving()">
-                {{ saving() ? "Guardando…" : "Guardar esta página ↗" }}
+                {{ saving() ? "Guardando…" : hasUnsavedChanges() ? "Salvar alterações ↗" : "Guardar esta página ↗" }}
               </button>
             </form>
           }
@@ -348,7 +351,7 @@ import { Journal, Reading } from "../../core/api/models";
     `,
   ],
 })
-export class DiaryPage {
+export class DiaryPage implements DraftAware {
   private readonly api = inject(ArcanaService);
   readonly readings = signal<Reading[]>([]);
   readonly selectedIndex = signal(0);
@@ -362,6 +365,9 @@ export class DiaryPage {
   note = "";
   favorite = false;
   private ticket = 0;
+  private noteTicket = 0;
+  private savedNote = "";
+  private savedFavorite = false;
   selected(): Reading | null {
     return this.readings()[this.selectedIndex()] || null;
   }
@@ -380,17 +386,36 @@ export class DiaryPage {
       )[status] || status
     );
   }
+  hasUnsavedChanges() {
+    return (
+      !!this.selected() &&
+      !this.noteLoading() &&
+      (this.note !== this.savedNote || this.favorite !== this.savedFavorite)
+    );
+  }
+  @HostListener("window:beforeunload", ["$event"])
+  protectDraft(event: BeforeUnloadEvent) {
+    if (this.hasUnsavedChanges()) event.preventDefault();
+  }
+  private confirmDiscard() {
+    return (
+      !this.hasUnsavedChanges() ||
+      window.confirm("Você tem anotações não salvas. Descartar as alterações?")
+    );
+  }
   filter(value: boolean) {
-    if (this.saving()) return;
+    if (this.saving() || !this.confirmDiscard()) return;
     this.favorites.set(value);
     this.offset.set(0);
-    void this.load();
+    void this.load(true);
   }
   paginate(delta: number) {
+    if (this.saving() || !this.confirmDiscard()) return;
     this.offset.update((value) => Math.max(0, value + delta));
-    void this.load();
+    void this.load(true);
   }
-  async load() {
+  async load(force = false) {
+    if (this.saving() || (!force && !this.confirmDiscard())) return;
     const ticket = ++this.ticket;
     this.loading.set(true);
     this.error.set("");
@@ -422,23 +447,31 @@ export class DiaryPage {
   }
   async select(index: number) {
     if (this.saving() || index < 0 || index >= this.readings().length) return;
+    if (index !== this.selectedIndex() && !this.confirmDiscard()) return;
+    const noteTicket = ++this.noteTicket;
     this.selectedIndex.set(index);
     this.note = "";
     this.favorite = false;
+    this.savedNote = "";
+    this.savedFavorite = false;
     this.notice.set("");
     this.noteLoading.set(true);
     const id = this.selected()!.id;
     try {
       const entry = await this.api.request<Journal>("/journal/" + id);
-      if (this.selected()?.id === id) {
+      if (noteTicket === this.noteTicket && this.selected()?.id === id) {
         this.note = entry.note;
         this.favorite = entry.favorite;
       }
     } catch (e) {
-      if (!(e instanceof ApiError && e.status === 404))
+      if (noteTicket === this.noteTicket && !(e instanceof ApiError && e.status === 404))
         this.error.set(errorText(e));
     } finally {
-      if (this.selected()?.id === id) this.noteLoading.set(false);
+      if (noteTicket === this.noteTicket && this.selected()?.id === id) {
+        this.savedNote = this.note;
+        this.savedFavorite = this.favorite;
+        this.noteLoading.set(false);
+      }
     }
   }
   async save() {
@@ -447,10 +480,14 @@ export class DiaryPage {
     this.saving.set(true);
     this.error.set("");
     try {
+      const submittedNote = this.note;
+      const submittedFavorite = this.favorite;
       await this.api.request("/journal/" + reading.id, "PUT", {
-        note: this.note,
-        favorite: this.favorite,
+        note: submittedNote,
+        favorite: submittedFavorite,
       });
+      this.savedNote = submittedNote;
+      this.savedFavorite = submittedFavorite;
       this.notice.set("Sua página foi guardada.");
     } catch (e) {
       this.error.set(errorText(e));

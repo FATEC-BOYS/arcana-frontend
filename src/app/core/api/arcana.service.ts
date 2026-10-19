@@ -48,7 +48,10 @@ export class ArcanaService {
       const value = JSON.parse(
         sessionStorage.getItem("arcana.session") || "null",
       );
-      return value?.access_token && value?.refresh_token ? value : null;
+      return typeof value?.access_token === "string" &&
+        typeof value?.refresh_token === "string" &&
+        value.access_token && value.refresh_token
+        ? value as Tokens : null;
     } catch {
       return null;
     }
@@ -124,6 +127,7 @@ export class ArcanaService {
     protectedRoute = true,
   ): Promise<T> {
     const original = this.tokens()?.access_token;
+    const requestEpoch = this.epoch;
     try {
       return await this.wire<T>(
         path,
@@ -139,17 +143,22 @@ export class ArcanaService {
         !protectedRoute
       )
         throw error;
+      // An old 401 must never revoke a new login or a deliberate logout.
+      if (requestEpoch !== this.epoch) throw new ApiError(401, null);
+      let replayToken: string | undefined;
       try {
         if (original === this.tokens()?.access_token) await this.refresh();
-        return await this.wire<T>(
-          path,
-          method,
-          body,
-          key,
-          this.tokens()?.access_token,
-        );
+        if (requestEpoch !== this.epoch) throw new ApiError(401, null);
+        replayToken = this.tokens()?.access_token;
+        if (!replayToken) throw new ApiError(401, null);
+        return await this.wire<T>(path, method, body, key, replayToken);
       } catch (retryError) {
-        if (retryError instanceof ApiError && retryError.status === 401) {
+        if (
+          retryError instanceof ApiError &&
+          retryError.status === 401 &&
+          requestEpoch === this.epoch &&
+          (!replayToken || replayToken === this.tokens()?.access_token)
+        ) {
           this.clear();
           void this.router.navigate(["/entrar"], {
             queryParams: { returnUrl: this.router.url },
@@ -172,12 +181,16 @@ export class ArcanaService {
     await this.profile();
   }
   async profile() {
+    const epoch = this.epoch;
     const user = await this.request<User>("/me");
+    if (epoch !== this.epoch) throw new ApiError(401, null);
     this.user.set(user);
     return user;
   }
   async logout() {
+    const epoch = this.epoch;
     await this.request<void>("/auth/logout", "POST");
+    if (epoch !== this.epoch) return;
     this.clear();
     await this.router.navigate(["/"]);
   }

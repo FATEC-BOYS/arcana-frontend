@@ -4,6 +4,11 @@ import { FormsModule } from "@angular/forms";
 import { Router, RouterLink } from "@angular/router";
 import { ArcanaService, errorText } from "../../core/api/arcana.service";
 import { Chart, ChartItem, Reading } from "../../core/api/models";
+function localDateISO(date = new Date()) {
+  const pad = (value: number) => String(value).padStart(2, "0");
+  return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}`;
+}
+
 @Component({
   standalone: true,
   imports: [FormsModule, RouterLink, DatePipe, KeyValuePipe, DecimalPipe],
@@ -228,7 +233,8 @@ export class AstrologyPage {
   fold: number | null = null;
   question = "";
   key = "";
-  today = new Date().toLocaleDateString("en-CA");
+  today = localDateISO();
+  private historyTicket = 0;
   constructor() {
     void this.loadHistory();
     inject(DestroyRef).onDestroy(() => this.clearSvg());
@@ -260,14 +266,15 @@ export class AstrologyPage {
     }
   }
   async loadHistory() {
+    const ticket = ++this.historyTicket;
+    const offset = this.offset();
     try {
-      this.history.set(
-        await this.api.request<ChartItem[]>(
-          "/astrology/charts?limit=20&offset=" + this.offset(),
-        ),
+      const items = await this.api.request<ChartItem[]>(
+        "/astrology/charts?limit=20&offset=" + offset,
       );
+      if (ticket === this.historyTicket) this.history.set(items);
     } catch (e) {
-      this.error.set(errorText(e));
+      if (ticket === this.historyTicket) this.error.set(errorText(e));
     }
   }
   page(delta: number) {
@@ -282,7 +289,7 @@ export class AstrologyPage {
         latitude: this.latitude,
         longitude: this.longitude,
         timezone: this.timezone,
-        fold: this.fold,
+        fold: this.unknown ? null : this.fold,
       });
       this.show(chart);
       await this.loadHistory();

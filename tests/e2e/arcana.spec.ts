@@ -124,7 +124,7 @@ async function mock(page: Page) {
               },
             }
           : [];
-    } else if (path === "/auth/reset-password") {
+    } else if (path === "/auth/reset-password" || path === "/auth/logout") {
       status = 204;
     } else {
       status = 404;
@@ -313,4 +313,77 @@ test("public navigation hides private destinations and private layout has its ow
   await expect(page).toHaveURL("/app/diario");
   await page.goto("/app/conta");
   await expect(page.getByRole("heading", { name: "Seu espaço" })).toBeVisible();
+});
+
+test("warns before abandoning private diary changes", async ({ page }) => {
+  await session(page);
+  await mock(page);
+  await page.goto("/app/diario");
+  const note = page.getByLabel("Anotação privada");
+  await expect(note).toBeVisible();
+  await note.fill("Rascunho ainda não salvo.");
+  page.once("dialog", (dialog) => dialog.dismiss());
+  await page.getByRole("button", { name: /Favoritas/ }).click();
+  await expect(note).toHaveValue("Rascunho ainda não salvo.");
+  page.once("dialog", (dialog) => dialog.dismiss());
+  await page.getByRole("link", { name: /Abrir uma nova leitura/ }).click();
+  await expect(page).toHaveURL(/app\/diario/);
+  page.once("dialog", (dialog) => dialog.accept());
+  await page.getByRole("link", { name: /Abrir uma nova leitura/ }).click();
+  await expect(page).toHaveURL(/app\/leitura/);
+});
+
+test("preserves reading-room drafts until saved or explicitly discarded", async ({
+  page,
+}) => {
+  await session(page);
+  await mock(page);
+  await page.goto("/app/mesa/reading-1");
+  const note = page.getByLabel("Suas anotações privadas");
+  await expect(note).toBeEnabled();
+  await note.fill("Quero voltar a esta reflexão.");
+  page.once("dialog", (dialog) => dialog.dismiss());
+  await page.getByRole("link", { name: /Nova leitura/ }).click();
+  await expect(page).toHaveURL(/app\/mesa\/reading-1/);
+  await expect(note).toHaveValue("Quero voltar a esta reflexão.");
+  await page.getByRole("button", { name: "Salvar no diário" }).click();
+  await expect(page.getByRole("status").filter({ hasText: "guardada" })).toBeVisible();
+  await page.getByRole("link", { name: /Nova leitura/ }).click();
+  await expect(page).toHaveURL(/app\/leitura/);
+});
+
+test("ignores a stale unauthorized response after a newer login", async ({
+  page,
+  isMobile,
+}) => {
+  await session(page);
+  await mock(page);
+  let releaseOldRequest: (() => void) | undefined;
+  let startedOldRequest: (() => void) | undefined;
+  const started = new Promise<void>((resolve) => (startedOldRequest = resolve));
+  let refreshCalls = 0;
+  await page.route("**/api/v1/auth/refresh", async (route) => {
+    refreshCalls++;
+    await route.fallback();
+  });
+  await page.route("**/api/v1/readings/reading-1", async (route) => {
+    startedOldRequest?.();
+    await new Promise<void>((resolve) => (releaseOldRequest = resolve));
+    await route.fulfill({ status: 401, json: { detail: "expired-old-session" } });
+  });
+  await page.goto("/app/mesa/reading-1");
+  await started;
+  await page.getByRole("link", { name: "Minha conta" }).click();
+  await expect(page.getByRole("heading", { name: "Seu espaço" })).toBeVisible();
+  await page.getByRole("button", { name: "Sair de todos os dispositivos" }).click();
+  await expect(page).toHaveURL("/");
+  if (isMobile) await page.getByRole("button", { name: "Abrir navegação" }).click();
+  await page.getByRole("link", { name: "Entrar", exact: true }).click();
+  await page.getByLabel("Seu e-mail", { exact: true }).fill(user.email);
+  await page.getByLabel("Sua senha", { exact: true }).fill("a-long-password");
+  await page.getByRole("button", { name: /Entrar no meu livro/ }).click();
+  await expect(page).toHaveURL(/app\/diario/);
+  releaseOldRequest?.();
+  await expect(page.getByRole("heading", { name: "Meu diário" })).toBeVisible();
+  expect(refreshCalls).toBe(0);
 });

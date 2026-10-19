@@ -15,11 +15,15 @@ Frontend em http://localhost:4200; backend local esperado em http://localhost:80
 ## Fluxos integrados
 
 - Cadastro/login, sessão com refresh rotativo, perfil, logout global e exclusão da conta.
+- Proteção contra 401 e respostas tardias de sessões anteriores após logout ou novo login.
 - Recuperação e redefinição de senha pelo token no fragmento do link de e-mail.
 - Catálogo da API com pesquisa e filtro de arcanos.
 - Tiragem idempotente, revelação das cartas sorteadas, interpretação, fontes, retry e conversa.
 - Diário em formato de livro, anotações privadas, favoritos e histórico paginado.
+- Aviso antes de perder anotações não salvas ao mudar de leitura, navegar ou fechar a aba;
+  rascunhos permanecem somente na memória da página, não no armazenamento local.
 - Mapas natais, horário desconhecido, posições, SVG quando disponível e interpretação.
+- Limite de data local no formulário e proteção contra respostas antigas no histórico de mapas.
 - Estados de carregamento, indisponibilidade, limites e falhas explícitas; sem interpretação simulada no app.
 
 O backend precisa estar acessível. Interpretação requer chave de modelo no **backend**;
@@ -50,7 +54,8 @@ npx playwright install chromium
 npm test
 ```
 
-Os testes de navegador cobrem desktop/celular com respostas HTTP sintéticas isoladas,
+Os testes de navegador cobrem desktop/celular, proteção de rascunhos, corrida de sessão
+após novo login e respostas HTTP sintéticas isoladas,
 sem chamadas pagas. O CI instala Chromium e testa os arquivos do build de produção.
 O app consulta o estado das gerações a cada 2,5s enquanto houver trabalho pendente;
 interrompe ao concluir, sair da tela ou ocorrer erro. Reabrir pelo diário retoma a consulta.
