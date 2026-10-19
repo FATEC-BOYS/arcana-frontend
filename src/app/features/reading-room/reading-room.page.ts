@@ -52,7 +52,7 @@ import { TarotCardComponent } from "../../shared/ui/tarot-card.component";
             </div>
           }
         </div>
-        <p class="muted small">
+        <p class="muted small" aria-live="polite">
           {{ revealed().length }} de {{ r.facts.cards?.length }} cartas
           reveladas. Toque em cada carta.
         </p>
@@ -66,9 +66,9 @@ import { TarotCardComponent } from "../../shared/ui/tarot-card.component";
           }}
         </p>
       }
-      <div class="reading-content" aria-live="polite">
+      <div class="reading-content">
         @if (r.status === "pending" || r.status === "processing") {
-          <div class="ritual-wait">
+          <div class="ritual-wait" role="status" aria-live="polite">
             <span aria-hidden="true">✦</span>
             <h2>Seu momento está tomando forma.</h2>
             <p>
