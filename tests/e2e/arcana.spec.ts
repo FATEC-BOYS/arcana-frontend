@@ -346,7 +346,7 @@ test("preserves reading-room drafts until saved or explicitly discarded", async 
   await page.getByRole("link", { name: /Nova leitura/ }).click();
   await expect(page).toHaveURL(/app\/mesa\/reading-1/);
   await expect(note).toHaveValue("Quero voltar a esta reflexão.");
-  await page.getByRole("button", { name: /Salvar alterações no diário/ }).click();
+  await page.getByRole("button", { name: "Salvar no diário" }).click();
   await expect(page.getByRole("status").filter({ hasText: "guardada" })).toBeVisible();
   await page.getByRole("link", { name: /Nova leitura/ }).click();
   await expect(page).toHaveURL(/app\/leitura/);
