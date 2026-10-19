@@ -16,12 +16,14 @@ export const routes: Routes = [
       { path: "", pathMatch: "full", redirectTo: "diario" },
       {
         path: "diario",
+        title: "Meu diário | Arcana",
         canDeactivate: [unsavedChangesGuard],
         loadComponent: () =>
           import("./features/diary/diary.page").then((m) => m.DiaryPage),
       },
       {
         path: "leitura",
+        title: "Nova leitura | Arcana",
         loadComponent: () =>
           import("./features/reading-setup/reading-setup.page").then(
             (m) => m.ReadingSetupPage,
@@ -29,6 +31,7 @@ export const routes: Routes = [
       },
       {
         path: "mapa",
+        title: "Mapa natal | Arcana",
         loadComponent: () =>
           import("./features/astrology/astrology.page").then(
             (m) => m.AstrologyPage,
@@ -36,13 +39,14 @@ export const routes: Routes = [
       },
       {
         path: "mesa/:id",
+        title: "Minha leitura | Arcana",
         canDeactivate: [unsavedChangesGuard],
         loadComponent: () =>
           import("./features/reading-room/reading-room.page").then(
             (m) => m.ReadingRoomPage,
           ),
       },
-      { path: "conta", data: { mode: "profile" }, loadComponent: account },
+      { path: "conta", title: "Minha conta | Arcana", data: { mode: "profile" }, loadComponent: account },
       { path: "**", redirectTo: "diario" },
     ],
   },
@@ -67,39 +71,46 @@ export const routes: Routes = [
       {
         path: "",
         pathMatch: "full",
+        title: "Arcana | Reflexão e simbolismo",
         loadComponent: () =>
           import("./features/home/home.page").then((m) => m.HomePage),
       },
       {
         path: "biblioteca",
+        title: "Biblioteca de cartas | Arcana",
         loadComponent: () =>
           import("./features/library/library.page").then((m) => m.LibraryPage),
       },
       {
         path: "cadastro",
+        title: "Criar conta | Arcana",
         canActivate: [guestGuard],
         data: { mode: "register" },
         loadComponent: account,
       },
       {
         path: "entrar",
+        title: "Entrar | Arcana",
         canActivate: [guestGuard],
         data: { mode: "login" },
         loadComponent: account,
       },
       {
         path: "recuperar-senha",
+        title: "Recuperar senha | Arcana",
         canActivate: [guestGuard],
         data: { mode: "forgot" },
         loadComponent: account,
       },
       {
         path: "redefinir-senha",
+        title: "Redefinir senha | Arcana",
         data: { mode: "reset" },
         loadComponent: account,
       },
       {
         path: "**",
+        title: "Página não encontrada | Arcana",
         loadComponent: () =>
           import("./shared/ui/pending.page").then((m) => m.PendingPage),
         data: {
