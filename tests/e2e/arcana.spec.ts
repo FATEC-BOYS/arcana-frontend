@@ -354,6 +354,7 @@ test("preserves reading-room drafts until saved or explicitly discarded", async 
 
 test("ignores a stale unauthorized response after a newer login", async ({
   page,
+  isMobile,
 }) => {
   await session(page);
   await mock(page);
@@ -376,6 +377,7 @@ test("ignores a stale unauthorized response after a newer login", async ({
   await expect(page.getByRole("heading", { name: "Seu espaço" })).toBeVisible();
   await page.getByRole("button", { name: "Sair de todos os dispositivos" }).click();
   await expect(page).toHaveURL("/");
+  if (isMobile) await page.getByRole("button", { name: "Abrir navegação" }).click();
   await page.getByRole("link", { name: "Entrar", exact: true }).click();
   await page.getByLabel("Seu e-mail", { exact: true }).fill(user.email);
   await page.getByLabel("Sua senha", { exact: true }).fill("a-long-password");
